@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulletin de Paie</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            font-size: 11px;
+            color: #1a1a1a;
+            line-height: 1.5;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #1e40af;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 18px;
+            color: #1e40af;
+            margin: 0;
+        }
+        .header h2 {
+            font-size: 14px;
+            color: #374151;
+            margin: 5px 0 0 0;
+        }
+        .info-grid {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .info-box {
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 10px;
+            width: 48%;
+        }
+        .info-box h3 {
+            font-size: 12px;
+            color: #1e40af;
+            margin: 0 0 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+        }
+        .info-value {
+            color: #1a1a1a;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        table th {
+            background-color: #1e40af;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-size: 11px;
+        }
+        table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .amount {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .total-row {
+            font-weight: 700;
+            background-color: #eff6ff !important;
+            border-top: 2px solid #1e40af;
+        }
+        .summary-grid {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .summary-box {
+            border: 2px solid #1e40af;
+            border-radius: 6px;
+            padding: 15px;
+            width: 300px;
+            background-color: #eff6ff;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        .summary-row.net {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e40af;
+            border-top: 2px solid #1e40af;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #d1d5db;
+            font-size: 9px;
+            color: #6b7280;
+            text-align: center;
+        }
+        .legal-mention {
+            font-size: 9px;
+            color: #6b7280;
+            margin-top: 15px;
+            padding: 8px;
+            background-color: #f9fafb;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>BULLETIN DE PAIE</h1>
+        <h2>Période : {{ month|stringformat:"02d" }} / {{ year }}</h2>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-box">
+            <h3>Employé</h3>
+            <div class="info-row">
+                <span class="info-label">Nom complet :</span>
+                <span class="info-value">{{ employee.first_name }} {{ employee.last_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">N° CNaPS :</span>
+                <span class="info-value">{{ employee.cnaps_number|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Org. sanitaire :</span>
+                <span class="info-value">{{ employee.get_organism_sanitaire_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Personnes à charge :</span>
+                <span class="info-value">{{ payslip.dependants_count }}</span>
+            </div>
+        </div>
+        <div class="info-box">
+            <h3>Employeur</h3>
+            <div class="info-row">
+                <span class="info-label">Entreprise :</span>
+                <span class="info-value">{{ company_name|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">NIF :</span>
+                <span class="info-value">{{ company_nif|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">STAT :</span>
+                <span class="info-value">{{ company_stat|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Date de génération :</span>
+                <span class="info-value">{{ payslip.generated_at|date:"d/m/Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Détail des gains et déductions -->
+    <table>
+        <thead>
+            <tr>
+                <th>Désignation</th>
+                <th class="amount">Base</th>
+                <th class="amount">Taux</th>
+                <th class="amount">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="total-row">
+                <td>Salaire brut</td>
+                <td class="amount">{{ payslip.gross_salary }}</td>
+                <td class="amount">—</td>
+                <td class="amount">{{ payslip.gross_salary }}</td>
+            </tr>
+            <tr>
+                <td>Cotisation CNaPS (part salarié)</td>
+                <td class="amount">{{ payslip.gross_salary }}</td>
+                <td class="amount">1%</td>
+                <td class="amount">- {{ payslip.cnaps_deduction }}</td>
+            </tr>
+            <tr>
+                <td>Cotisation {{ employee.get_organism_sanitaire_display }} (part salarié)</td>
+                <td class="amount">{{ payslip.gross_salary }}</td>
+                <td class="amount">1%</td>
+                <td class="amount">- {{ payslip.ostie_deduction }}</td>
+            </tr>
+            <tr>
+                <td>Cotisation FMFP (part salarié)</td>
+                <td class="amount">{{ payslip.gross_salary }}</td>
+                <td class="amount">1%</td>
+                <td class="amount">- {{ payslip.fmfp_deduction }}</td>
+            </tr>
+            <tr>
+                <td>IRSA (Impôt sur les Revenus Salariaux et Assimilés)</td>
+                <td class="amount">{{ base_irsa }}</td>
+                <td class="amount">—</td>
+                <td class="amount">- {{ payslip.irsa_tax }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Détail des tranches IRSA -->
+    {% if bracket_details %}
+    <h3 style="color: #1e40af; font-size: 12px; margin: 15px 0 5px 0;">Détail du calcul IRSA par tranches</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Tranche</th>
+                <th class="amount">De</th>
+                <th class="amount">À</th>
+                <th class="amount">Taux</th>
+                <th class="amount">Montant imposable</th>
+                <th class="amount">Impôt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bracket in bracket_details %}
+            <tr>
+                <td>{{ bracket.tranche }}</td>
+                <td class="amount">{{ bracket.min }}</td>
+                <td class="amount">{{ bracket.max }}</td>
+                <td class="amount">{{ bracket.taux }}%</td>
+                <td class="amount">{{ bracket.montant_imposable }}</td>
+                <td class="amount">{{ bracket.impot }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="4">Total IRSA avant réduction</td>
+                <td class="amount"></td>
+                <td class="amount">{{ irsa_brut }}</td>
+            </tr>
+            {% if payslip.dependants_count > 0 %}
+            <tr>
+                <td colspan="4">Réduction ({{ payslip.dependants_count }} personne(s) à charge × 2 000 Ar)</td>
+                <td class="amount"></td>
+                <td class="amount">- {{ irsa_reduction }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Résumé -->
+    <div class="summary-grid">
+        <div class="summary-box">
+            <div class="summary-row">
+                <span>Salaire brut</span>
+                <span>{{ payslip.gross_salary }} Ar</span>
+            </div>
+            <div class="summary-row">
+                <span>Total cotisations salarié</span>
+                <span>- {{ total_deductions }} Ar</span>
+            </div>
+            <div class="summary-row">
+                <span>IRSA</span>
+                <span>- {{ payslip.irsa_tax }} Ar</span>
+            </div>
+            <div class="summary-row net">
+                <span>Salaire net à payer</span>
+                <span>{{ payslip.net_salary }} Ar</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="legal-mention">
+        <strong>Mention légale :</strong> Conformément à la Loi de Finances n° 2025-021 et au décret de mars 2026,
+        le barème IRSA appliqué est celui en vigueur depuis le 1er janvier 2026.
+        Le minimum de perception est fixé à 3 000 Ar. La réduction pour personnes à charge est de 2 000 Ar par charge.
+        SME = 300 000 Ar — Plafond de cotisations = 2 400 000 Ar (8 × SME).
+    </div>
+
+    <div class="footer">
+        Document généré automatiquement par mada_fisc_auto — {{ generated_date }}
+    </div>
+</body>
+</html>
