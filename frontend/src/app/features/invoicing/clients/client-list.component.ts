@@ -26,6 +26,11 @@ import { ErrorHandlerService } from '../../../core/services/error-handler.servic
           </svg>
         </div>
       } @else {
+        <div class="card mb-4">
+          <p class="text-sm text-gray-500">
+            <span class="font-semibold text-gray-900">{{ clients().length }}</span> client(s) total
+          </p>
+        </div>
         <div class="card">
           <div class="overflow-x-auto">
             <table class="min-w-full">
